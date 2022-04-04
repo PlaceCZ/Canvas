@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .container {
+            position: relative;
+        }
+
+        .container>canvas {
+            position: absolute;
+            top: 0em;
+            left: 0em;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container" class="container">
+        <canvas id="canvas_background" width="2000" height="1500"></canvas>
+        <canvas id="canvas_foreground"></canvas>
+    </div>
+
+    <script>
+        const X_GRID_PIXELS = 12
+        const Y_GRID_PIXELS = 12
+
+        // Top Left corner, including
+        const X_IMG_POSITION = 1197;
+        const Y_IMG_POSITION = 161 - 6;
+
+        const X_OFFSET = 0
+        const Y_OFFSET = 0
+
+        const background = document.getElementById("canvas_background");
+        const bg_canvas = background.getContext("2d");
+
+        const foreground = document.getElementById("canvas_foreground");
+        const fg_canvas = foreground.getContext("2d");
+
+        const img = new Image();
+        img.onload = function () {
+            w = img.width * X_GRID_PIXELS
+            h = img.height * Y_GRID_PIXELS
+
+            //bg_canvas.canvas.width = (w + X_OFFSET);
+            //bg_canvas.canvas.width = (h + 2 * Y_OFFSET);
+            fg_canvas.canvas.width = bg_canvas.canvas.width;
+            fg_canvas.canvas.height = bg_canvas.canvas.height;
+
+            bg_canvas.imageSmoothingEnabled = false;
+            bg_canvas.drawImage(img, 0, 0, img.width, img.height, 0, Y_OFFSET, w, h)
+            drawGrid(0, Y_OFFSET, bg_canvas.canvas.width, bg_canvas.canvas.width + Y_OFFSET, bg_canvas)
+        };
+        img.src = './place.png'
+
+        foreground.addEventListener('mousemove', event => {
+            let mousePos = getMousePos(foreground, event);
+            let x = Math.floor((mousePos.x) / (X_GRID_PIXELS));
+            let y = Math.floor((mousePos.y) / (Y_GRID_PIXELS));
+
+            fg_canvas.clearRect(0, 0, fg_canvas.canvas.width, fg_canvas.canvas.height);
+
+            if (y < 0) {
+                return;
+            }
+            drawText((x + X_IMG_POSITION) + "", mousePos.x + 50, mousePos.y + 100)
+            drawText((y + Y_IMG_POSITION) + "", mousePos.x + 50, mousePos.y + 160)
+
+            fg_canvas.lineWidth = 4;
+            let circle_x = x * X_GRID_PIXELS + X_GRID_PIXELS / 2;
+            let circle_y = y * Y_GRID_PIXELS + Y_OFFSET + Y_GRID_PIXELS / 2;
+            fg_canvas.beginPath()
+            fg_canvas.strokeStyle = 'red';
+            fg_canvas.arc(circle_x, circle_y, X_GRID_PIXELS - 6, 0, 2 * Math.PI, false);
+            fg_canvas.stroke()
+
+            fg_canvas.beginPath()
+            fg_canvas.strokeStyle = 'white';
+            fg_canvas.arc(circle_x, circle_y, X_GRID_PIXELS - 4, 0, 2 * Math.PI, false);
+            fg_canvas.stroke()
+
+            fg_canvas.beginPath()
+            fg_canvas.strokeStyle = 'black';
+            fg_canvas.arc(circle_x, circle_y, X_GRID_PIXELS, 0, 2 * Math.PI, false);
+            fg_canvas.stroke()
+
+        });
+
+        foreground.addEventListener('click', event => {
+            let p = getMousePos(foreground, event);
+            let x = Math.floor((p.x) / X_GRID_PIXELS) + X_IMG_POSITION;
+            let y = Math.floor((p.y - Y_OFFSET) / Y_GRID_PIXELS) + Y_IMG_POSITION;
+
+            if (y < Y_IMG_POSITION) {
+                return;
+            }
+
+            let url = "https://new.reddit.com/r/place/?cx=" + x + "&cy=" + y + "&px=23"
+            window.open(url, '_blank').focus();
+        });
+
+        function getMousePos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+                y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+            };
+        }
+
+        function drawGrid(x_0, y_0, x_max, y_max, ctx) {
+            for (let x = x_0; x <= x_max; x += X_GRID_PIXELS) {
+                ctx.moveTo(x, y_0);
+                ctx.lineTo(x, y_max);
+                for (let y = y_0; y <= y_max; y += Y_GRID_PIXELS) {
+                    ctx.moveTo(x_0, y);
+                    ctx.lineTo(x_max, y);
+                }
+            }
+            ctx.strokeStyle = '#bbbbbb';
+            ctx.stroke();
+        }
+
+        function drawText(text, x, y) {
+            fg_canvas.font = '50px Sans-serif';
+            fg_canvas.strokeStyle = 'black';
+            fg_canvas.lineWidth = 8;
+            fg_canvas.strokeText(text, x, y);
+            fg_canvas.fillStyle = 'white';
+            fg_canvas.fillText(text, x, y);
+        }
+    </script>
+
+</body>
+
+</html>
